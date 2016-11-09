@@ -34,20 +34,14 @@ public class TerrainManager : MonoBehaviour, ICameraObserver
         public Vector2 offset;
     }
 
-    public Terrain mainTerrain;
-
-    public int resolutionX;
-    public int resolutionY;
-    float[,] heights;
-
     Transform projector;
 
     List<Vector2> loadedChunks = new List<Vector2>();
     Vector2[] visibleChunks = null;
     Terrain[] chunkGraphics = new Terrain[9];
 
-    int chunkSizeX = 512;
-    int chunkSizeY = 512;
+    const int chunkSizeX = 512;
+    const int chunkSizeY = 512;
 
     Vector2 currentChunkIndex = new Vector2();
 
@@ -61,15 +55,11 @@ public class TerrainManager : MonoBehaviour, ICameraObserver
 
     public Transform waterPlanePrefab;
 
+    public int resolution { get { return chunkSizeX / 2; } }
 
     // Use this for initialization
     void Start()
     {
-        resolutionX = mainTerrain.terrainData.heightmapWidth;
-        resolutionY = mainTerrain.terrainData.heightmapHeight;
-
-        heights = mainTerrain.terrainData.GetHeights(0, 0, resolutionX, resolutionY);
-
         projector = GameObject.Find("BrushSizeProjector").transform;
 
         Camera.main.GetComponent<RTSCamera>().Subscribe(this);
@@ -138,8 +128,15 @@ public class TerrainManager : MonoBehaviour, ICameraObserver
 
     void ModifyTerrain(Vector3 position, float amount, int diameter)
     {
-        int terrainPosX = (int)((position.x / mainTerrain.terrainData.size.x) * resolutionX);
-        int terrainPosY = (int)((position.z / mainTerrain.terrainData.size.z) * resolutionY);
+        int TerrainIndex = GetTerrainFromPos(position);
+        Terrain mainTerrain = chunkGraphics[TerrainIndex];
+
+        position = GetRelativePosition(position);
+
+        float[,] heights = mainTerrain.terrainData.GetHeights(0, 0, resolution, resolution);
+
+        int terrainPosX = (int)((position.x / mainTerrain.terrainData.size.x) * resolution);
+        int terrainPosY = (int)((position.z / mainTerrain.terrainData.size.z) * resolution);
 
         float[,] heightChange = new float[diameter, diameter];
 
@@ -152,7 +149,7 @@ public class TerrainManager : MonoBehaviour, ICameraObserver
                 int x2 = x - radius;
                 int y2 = y - radius;
 
-                if (terrainPosY + y2 < 0 || terrainPosY + y2 >= resolutionY || terrainPosX + x2 < 0 || terrainPosX + x2 >= resolutionX)
+                if (terrainPosY + y2 < 0 || terrainPosY + y2 >= resolution || terrainPosX + x2 < 0 || terrainPosX + x2 >= resolution)
                     continue;
 
                 float distance = Mathf.Sqrt((x2 * x2) + (y2 * y2));
@@ -173,6 +170,32 @@ public class TerrainManager : MonoBehaviour, ICameraObserver
 
         //FIXME Does not work when array is larger than current terrain
         mainTerrain.terrainData.SetHeights(terrainPosX - radius, terrainPosY - radius, heightChange);
+    }
+
+    //get an index into our terrain array
+    int GetTerrainFromPos(Vector3 position)
+    {
+        int xValue = Mathf.FloorToInt(position.x / chunkSizeX);
+        int yValue = Mathf.FloorToInt(position.y / chunkSizeY);
+
+        for(int i = 0; i < visibleChunks.Length; i++)
+        {
+            if (visibleChunks[i].x == xValue && visibleChunks[i].y == yValue)
+                return i;
+        }
+
+        throw new System.Exception("Could not find that chunk!");
+    }
+
+    //convert world position to terrain position
+    Vector3 GetRelativePosition(Vector3 postion)
+    {
+        return new Vector3(modulus(postion.x, chunkSizeX), postion.y, modulus(postion.z, chunkSizeY));
+    }
+
+    float modulus(float f1, float f2)
+    {
+        return f1 - f2 * Mathf.FloorToInt(f1 / f2);
     }
 
     public void OnCameraMove(Vector3 newCameraPosition)
@@ -439,18 +462,18 @@ public class TerrainManager : MonoBehaviour, ICameraObserver
     void SetTerrainTrees(Terrain terrain)
     {
         terrain.terrainData.treeInstances = new TreeInstance[0];
-        for (int x = 0; x < resolutionX; x++)
+        for (int x = 0; x < resolution; x++)
         {
-            for (int y = 0; y < resolutionX; y+=20)
+            for (int y = 0; y < resolution; y+=20)
             {
                 float height = terrain.terrainData.GetHeight(x, y);
-                float steepness = terrain.terrainData.GetSteepness((float)x / (float)resolutionX, (float)(y) / (float)resolutionX);
+                float steepness = terrain.terrainData.GetSteepness((float)x / (float)resolution, (float)(y) / (float)resolution);
 
                 if (Random.value > (0.3f + (steepness / 30)) && height >= waterThreshold - 10)
                 {
                     TreeInstance instance = new TreeInstance();
                     instance.prototypeIndex = 0;
-                    instance.position = new Vector3((float)x / (float)resolutionX, 0, (float)(y + Random.Range(0,10)) / (float)resolutionX);
+                    instance.position = new Vector3((float)x / (float)resolution, 0, (float)(y + Random.Range(0,10)) / (float)resolution);
                     instance.widthScale = 1.0f;
                     instance.heightScale = 1.0f;
                     instance.color = Color.white;
