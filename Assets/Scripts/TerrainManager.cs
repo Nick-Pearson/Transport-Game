@@ -64,7 +64,6 @@ public class TerrainManager : MonoBehaviour, ICameraObserver
 
         Camera.main.GetComponent<RTSCamera>().Subscribe(this);
 
-
         terrainTextures = new SplatPrototype[biomeTextures.Length * 5];
         terrainTrees = new TreePrototype[trees.Length];
 
@@ -169,9 +168,10 @@ public class TerrainManager : MonoBehaviour, ICameraObserver
         }
 
         //FIXME Does not work when array is larger than current terrain
+        Debug.Log(position.x);
         mainTerrain.terrainData.SetHeights(terrainPosX - radius, terrainPosY - radius, heightChange);
     }
-
+    
     //get an index into our terrain array
     int GetTerrainFromPos(Vector3 position)
     {
@@ -183,7 +183,7 @@ public class TerrainManager : MonoBehaviour, ICameraObserver
             if (visibleChunks[i].x == xValue && visibleChunks[i].y == yValue)
                 return i;
         }
-
+        
         throw new System.Exception("Could not find that chunk!");
     }
 
