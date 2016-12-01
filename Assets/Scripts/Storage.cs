@@ -14,6 +14,7 @@ public enum ItemType
     None
 }
 
+[System.Serializable]
 public struct Item
 {
     public ItemType Type;
@@ -43,8 +44,10 @@ public class Storage : MonoBehaviour {
         NumberOfFreeItems = MaxStorageSize;
 	}
 
-    void AddItem(Item NewItem)
+    public void AddItem(Item NewItem)
     {
+        Debug.Log("Got Item " + NewItem.Type);
+
         //check if we already have some of this item
         Item CurrentItem = GetItem(NewItem.Type);
 
@@ -64,7 +67,7 @@ public class Storage : MonoBehaviour {
         }
     }
 
-    Item GetItem(ItemType Type)
+    public Item GetItem(ItemType Type)
     {
         for(int i = 0; i < MaxStorageSize; i++)
         {
@@ -80,7 +83,7 @@ public class Storage : MonoBehaviour {
         return NullItem;
     }
 
-    void RemoveItem(ItemType Type, int Amount)
+    public void RemoveItem(Item Item)
     {
 
     }
