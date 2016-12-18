@@ -157,4 +157,16 @@ public class Storage : MonoBehaviour {
 
         return Items[ItemIndex].Count;
     }
+
+    public Item[] GetItems()
+    {
+        Item[] ReturnList = new Item[MaxStorageSize - NumberOfFreeItems];
+
+        for(int i = 0; i < ReturnList.Length; i++)
+        {
+            ReturnList[i] = Items[i];
+        }
+
+        return ReturnList;
+    }
 }

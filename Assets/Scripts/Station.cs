@@ -1,25 +1,21 @@
 ﻿using UnityEngine;
 using System.Collections;
-
-public struct ItemRequest
-{
-    Item Item;
-    Storage Storage;
-}
-
+using System.Collections.Generic;
 
 [RequireComponent(typeof(Storage))]
 public class Station : MonoBehaviour {
     private Storage mStorage;
 
-    private ArrayList mWatchList;
+    private List<Storage> mWatchList;
 
-    private ArrayList mItemRequests;
+    private List<Route> mConnectedRoutes;
 
     void Awake()
     {
         mStorage = GetComponent<Storage>();
-        mWatchList = new ArrayList();
+
+        mWatchList = new List<Storage>();
+        mConnectedRoutes = new List<Route>();
     }
 
     public void RegisterStorageItem(Storage NewStorage)
@@ -35,8 +31,26 @@ public class Station : MonoBehaviour {
         mWatchList.Remove(NewStorage);
     }
 
-    public void RequestItem(ItemRequest Request)
+    public void AddRoute(Route NewRoute)
     {
-        mItemRequests.Add(Request);
+        mConnectedRoutes.Add(NewRoute);
+
+        UpdateStorageList();
+    }
+
+    private void UpdateStorageList()
+    {
+        for(int i = 0; i < mWatchList.Count; i++)
+        {
+            Item[] Items = mWatchList[i].GetItems();
+
+            for(int j = 0; j < mConnectedRoutes.Count; j++)
+            {
+                if(mConnectedRoutes[j].CanTransportItem(ref Items[i]))
+                {
+                    // do some magic, move the item to the station
+                }
+            }
+        }
     }
 }
