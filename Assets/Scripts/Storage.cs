@@ -3,15 +3,15 @@ using System.Collections;
 
 public enum ItemType
 {
+    None,
+
     Stone,
     Wood,
     Iron,
     Coal,
 
     Paper,
-    Cars,
-
-    None
+    Cars
 }
 
 [System.Serializable]
@@ -22,7 +22,7 @@ public struct Item
 }
 
 public class Storage : MonoBehaviour {
-    // maximum number of items this sotrage area can hold
+    // maximum number of items this storage area can hold
     public int MaxStorageSize;
 
     //raw item data
@@ -42,16 +42,30 @@ public class Storage : MonoBehaviour {
 
         Items = new Item[MaxStorageSize];
         NumberOfFreeItems = MaxStorageSize;
-	}
+
+        DebugStorage();
+    }
+    
+    public void DebugStorage()
+    {
+        string DebugMessage = "[";
+
+        for (int i = 0; i < MaxStorageSize; i++)
+        {
+            DebugMessage += Items[i].Type + "(" + Items[i].Count + "),";
+        }
+
+        DebugMessage += "]";
+
+        Debug.Log(DebugMessage);
+    }
 
     public void AddItem(Item NewItem)
     {
-        Debug.Log("Got Item " + NewItem.Type);
-
         //check if we already have some of this item
-        Item CurrentItem = GetItem(NewItem.Type);
+        int CurrentItemIndex = GetItem(NewItem.Type);
 
-        if(CurrentItem.Type == ItemType.None)
+        if(CurrentItemIndex == -1)
         {
             //create a new item
             int FreeSpace = FindFreeItemSlot();
@@ -60,44 +74,87 @@ public class Storage : MonoBehaviour {
             {
                 Items[FreeSpace] = NewItem;
             }
+
+            NumberOfFreeItems--;
         }
         else
         {
-            CurrentItem.Count += NewItem.Count;
+            Items[CurrentItemIndex].Count += NewItem.Count;
         }
+
+        DebugStorage();
     }
 
-    public Item GetItem(ItemType Type)
+    public int GetItem(ItemType Type)
     {
         for(int i = 0; i < MaxStorageSize; i++)
         {
             if(Items[i].Type == Type)
             {
-                return Items[i];
+                return i;
             }
         }
-
-        Item NullItem = new Item();
-        NullItem.Type = ItemType.None;
-
-        return NullItem;
+        
+        return -1;
     }
 
     public void RemoveItem(Item Item)
     {
+        for (int i = 0; i < MaxStorageSize; i++)
+        {
+            if(Items[i].Type == Item.Type)
+            {
+                Items[i].Count -= Item.Count;
 
+                if(Items[i].Count <= 0)
+                {
+                    //remove from the list
+                    int LastFreeItem = FindFreeItemSlot();
+
+                    if(LastFreeItem == -1)
+                    {
+                        LastFreeItem = MaxStorageSize;
+                    }
+
+                    LastFreeItem--;
+
+                    if (i != LastFreeItem)
+                    {
+                        Items[i] = Items[LastFreeItem];
+                    }
+                    else
+                    {
+                        Items[i].Type = ItemType.None;
+                        Items[i].Count = 0;
+                    }
+
+                    NumberOfFreeItems++;
+                }
+
+                break;
+            }
+        }
+
+        DebugStorage();
     }
 
     private int FindFreeItemSlot()
     {
-        for(int i = 0; i < MaxStorageSize; i++)
+        if(NumberOfFreeItems > 0)
         {
-            if(Items[i].Type == ItemType.None)
-            {
-                return i;
-            }
+            return MaxStorageSize - NumberOfFreeItems;
         }
 
         return -1;
+    }
+
+    public int GetItemCount(ItemType Type)
+    {
+        int ItemIndex = GetItem(Type);
+
+        if (ItemIndex == -1)
+            return 0;
+
+        return Items[ItemIndex].Count;
     }
 }

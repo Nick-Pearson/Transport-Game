@@ -5,37 +5,47 @@ using System.Collections;
 public class Factory : MonoBehaviour {
     public FactoryData FactoryType;
 
+    public Station LocalStation;
+
     private Storage mStorage;
+
+    private ProductionData[] Productions;
 
     void Awake()
     {
         mStorage = GetComponent<Storage>();
+
+        Productions = new ProductionData[FactoryType.Productions.Length];
+        for(int i = 0; i < FactoryType.Productions.Length; i++)
+        {
+            Productions[i] = FactoryType.Productions[i];
+        }
+
+        LocalStation.RegisterStorageItem(mStorage);
     }
 
     void Update()
     {
-        for(int i = 0; i < FactoryType.Productions.Length; i++)
+        for (int i = 0; i < Productions.Length; i++)
         {
-            if(CheckRequirements(ref FactoryType.Productions[i]))
+            if (CheckRequirements(ref Productions[i]))
             {
-                ProduceItem(ref FactoryType.Productions[i]);
+                ProduceItem(ref Productions[i]);
             }
         }
     }
 
     bool CheckRequirements(ref ProductionData Production)
     {
-        if(Time.time < Production.LastUpdateTime + Production.RequiredTime)
+        if (Time.time < Production.LastUpdateTime + Production.RequiredTime)
             return false;
 
         for(int i = 0; i < Production.RequiredItems.Length; i++)
         {
-            Item mItem = mStorage.GetItem(Production.RequiredItems[i].Type);
-
-            if (mItem.Count < Production.RequiredItems[i].Count)
+            if (mStorage.GetItemCount(Production.RequiredItems[i].Type) < Production.RequiredItems[i].Count)
                 return false;
         }
-
+        
         return true;
     }
 
