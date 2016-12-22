@@ -3,9 +3,9 @@ using UnityEngine;
 
 public class Route {
     //do any of the stations want this item
-    public bool CanTransportItem(ref Item NewItem)
+    public bool CanTransportItem(Item NewItem)
     {
-        return false;
+        return true;
     }
 
     // Get all stations that want this item

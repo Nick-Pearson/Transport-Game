@@ -16,6 +16,8 @@ public class Station : MonoBehaviour {
 
         mWatchList = new List<Storage>();
         mConnectedRoutes = new List<Route>();
+
+        AddRoute(new Route());
     }
 
     public void RegisterStorageItem(Storage NewStorage)
@@ -23,12 +25,14 @@ public class Station : MonoBehaviour {
         if (!mWatchList.Contains(NewStorage))
         {
             mWatchList.Add(NewStorage);
+            NewStorage.OnStorageChangedEvent.AddListener(UpdateStorageList);
         }
     }
 
     public void UnregisterStorageItem(Storage NewStorage)
     {
         mWatchList.Remove(NewStorage);
+        NewStorage.OnStorageChangedEvent.RemoveListener(UpdateStorageList);
     }
 
     public void AddRoute(Route NewRoute)
@@ -42,13 +46,18 @@ public class Station : MonoBehaviour {
     {
         for(int i = 0; i < mWatchList.Count; i++)
         {
-            Item[] Items = mWatchList[i].GetItems();
-
-            for(int j = 0; j < mConnectedRoutes.Count; j++)
+            List<Item> Items = mWatchList[i].GetItems();
+            
+            for (int k = 0; k < Items.Count; k++)
             {
-                if(mConnectedRoutes[j].CanTransportItem(ref Items[i]))
+                for (int j = 0; j < mConnectedRoutes.Count; j++)
                 {
-                    // do some magic, move the item to the station
+                    if (mConnectedRoutes[j].CanTransportItem(Items[k]))
+                    {
+                        // do some magic, move the item to the station
+                        mStorage.AddItem(Items[k]);
+                        mWatchList[i].RemoveItem(Items[k]);
+                    }
                 }
             }
         }

@@ -21,7 +21,12 @@ public class Factory : MonoBehaviour {
             Productions[i] = FactoryType.Productions[i];
         }
 
-        LocalStation.RegisterStorageItem(mStorage);
+        if (LocalStation != null)
+        {
+            //LocalStation.RegisterStorageItem(mStorage);
+            mStorage = LocalStation.GetComponent<Storage>();
+
+        }
     }
 
     void Update()

@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
+using UnityEngine.Events;
+using System.Collections.Generic;
 
 public enum ItemType
 {
@@ -15,42 +17,31 @@ public enum ItemType
 }
 
 [System.Serializable]
-public struct Item
+public class Item
 {
     public ItemType Type;
     public int Count;
 }
 
 public class Storage : MonoBehaviour {
-    // maximum number of items this storage area can hold
-    public int MaxStorageSize;
-
     //raw item data
-    private Item[] Items;
+    private List<Item> Items;
 
-    private int NumberOfFreeItems;
+    public UnityEvent OnStorageChangedEvent;
 
 	// Use this for initialization
 	void Start ()
     {
-        //check data is valid
-	    if(MaxStorageSize <= 0)
-        {
-            Debug.LogWarning("Storage Size must be >= 0");
-            MaxStorageSize = 1;
-        }
+        Items = new List<Item>();
 
-        Items = new Item[MaxStorageSize];
-        NumberOfFreeItems = MaxStorageSize;
-
-        DebugStorage();
+        OnStorageChangedEvent.AddListener(DebugStorage);
     }
     
     public void DebugStorage()
     {
-        string DebugMessage = "[";
+        string DebugMessage = this + "[";
 
-        for (int i = 0; i < MaxStorageSize; i++)
+        for (int i = 0; i < Items.Count; i++)
         {
             DebugMessage += Items[i].Type + "(" + Items[i].Count + "),";
         }
@@ -67,27 +58,19 @@ public class Storage : MonoBehaviour {
 
         if(CurrentItemIndex == -1)
         {
-            //create a new item
-            int FreeSpace = FindFreeItemSlot();
-
-            if(FreeSpace != -1)
-            {
-                Items[FreeSpace] = NewItem;
-            }
-
-            NumberOfFreeItems--;
+            Items.Add(NewItem);
         }
         else
         {
             Items[CurrentItemIndex].Count += NewItem.Count;
         }
-
-        DebugStorage();
+        
+        OnStorageChangedEvent.Invoke();
     }
 
     public int GetItem(ItemType Type)
     {
-        for(int i = 0; i < MaxStorageSize; i++)
+        for(int i = 0; i < Items.Count; i++)
         {
             if(Items[i].Type == Type)
             {
@@ -100,52 +83,21 @@ public class Storage : MonoBehaviour {
 
     public void RemoveItem(Item Item)
     {
-        for (int i = 0; i < MaxStorageSize; i++)
+        int index = GetItem(Item.Type);
+
+        if (index == -1)
+            return;
+
+        if(Items[index].Count >  Item.Count)
         {
-            if(Items[i].Type == Item.Type)
-            {
-                Items[i].Count -= Item.Count;
-
-                if(Items[i].Count <= 0)
-                {
-                    //remove from the list
-                    int LastFreeItem = FindFreeItemSlot();
-
-                    if(LastFreeItem == -1)
-                    {
-                        LastFreeItem = MaxStorageSize;
-                    }
-
-                    LastFreeItem--;
-
-                    if (i != LastFreeItem)
-                    {
-                        Items[i] = Items[LastFreeItem];
-                    }
-                    else
-                    {
-                        Items[i].Type = ItemType.None;
-                        Items[i].Count = 0;
-                    }
-
-                    NumberOfFreeItems++;
-                }
-
-                break;
-            }
+            Items[index].Count -= Item.Count;
+        }
+        else
+        {
+            Items.RemoveAt(index);
         }
 
-        DebugStorage();
-    }
-
-    private int FindFreeItemSlot()
-    {
-        if(NumberOfFreeItems > 0)
-        {
-            return MaxStorageSize - NumberOfFreeItems;
-        }
-
-        return -1;
+        OnStorageChangedEvent.Invoke();
     }
 
     public int GetItemCount(ItemType Type)
@@ -158,15 +110,8 @@ public class Storage : MonoBehaviour {
         return Items[ItemIndex].Count;
     }
 
-    public Item[] GetItems()
+    public List<Item> GetItems()
     {
-        Item[] ReturnList = new Item[MaxStorageSize - NumberOfFreeItems];
-
-        for(int i = 0; i < ReturnList.Length; i++)
-        {
-            ReturnList[i] = Items[i];
-        }
-
-        return ReturnList;
+        return Items;
     }
 }
